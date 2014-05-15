@@ -68,7 +68,7 @@ module TwitterAPI
 		# PARAMS : 
 			# nbTweets : le nombre de tweets voulu
 		# RETURN : JSON avec les tweets
-		def getTimelineForUser(nbTweets)
+		def getTimeline(nbTweets)
 			url = URI.parse("https://api.twitter.com/1.1/statuses/home_timeline.json?count=#{nbTweets}");
 			return executeRequest(url)
 		end
@@ -102,6 +102,26 @@ module TwitterAPI
 			return executeRequest(url) 
 		end
 
+		# getMentionsForUser
+		# -> Récupère les mentions sur l'utilisateur
+		# PARAMS : 
+			# nb : le nombre de mentions
+		# RETURN : JSON avec les tweets
+		def getMentions(nb)
+			url = URI.parse("https://api.twitter.com/1.1/statuses/mentions_timeline.json?count=#{nb}");
+			return executeRequest(url) 
+		end
+
+		# getMentionsSinceID
+		# -> Récupère les mentions plus récente que celle dont on donne l'id
+		# PARAMS : 
+			# id : l'id de la mention la plus récente
+		# RETURN : JSON avec les tweets
+		def getMentionsSinceID(id)
+			url = URI.parse("https://api.twitter.com/1.1/statuses/mentions_timeline.json?since_id=#{id}");
+			return executeRequest(url) 
+		end
+
 	# PRIVATE METHODS
 	private
 
@@ -117,7 +137,7 @@ module TwitterAPI
 			# On crée un socket vers le serveur
 			http = Net::HTTP.new(url.host, url.port)
 
-			http.set_debug_output($stdout) # Décommenter pour voir les informations de Debug
+			# http.set_debug_output($stdout) # Décommenter pour voir les informations de Debug
 
 			# CERTIFICAT NON IMPLEMENTE suite à une erreur
 			http.ca_path = "~/ruby/UniSoc/certificates"

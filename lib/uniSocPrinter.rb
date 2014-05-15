@@ -5,25 +5,33 @@ module UniSoc
 
 	class UniSocPrinter
 
-		attr_accessor :twitterConnection, :lastTweetID, :tweets, :commands
+		attr_reader :twitterConnection, :lastTweetID, :tweets, :commands, :mentions, :user, :lastMentionID
 
 		## Commandes acceptées par le programme avec leurs descriptions
 		@commands = { 
 			"[t] Twitter" => {
 				"[rl] ratelimit" => "Affiche le nombre de requêtes restantes",
-				"[t] timeline" => "Réaffiche la timeline",
+				"[t] timeline" => "Affiche la timeline",
+				"[m] mention" => "Affiche les mentions",
 				"[u] user <username>" => "Affiche les informations sur l'utilisateur"
 			},
 			"[q] quit" => "Quitte l'application"
 		}
 
-		def initialize 
+		def self.Init (user)
+			@@user = user
 			@@twitterConnection = TwitterAPI::TwitterConnection.new
 			@@lastTweetID = 0
 			@@tweets = nil
+			@@mentions = nil
 		end
 
 		## CLASS METHODS
+
+		def self.PrintTwitterDatas
+			LoadAndPrintTimeline()
+			LoadAndPrintMentionTimeline()
+		end
 
 		# PrintTwitterTimeline
 		# -> Affiche la timeline Twitter
@@ -31,11 +39,25 @@ module UniSoc
 		# RETURN : No
 		def self.PrintTwitterTimeline
 			if (@@tweets != nil)
-				@@tweets.each do |tweet|
+				@@tweets.reverse.each do |tweet|
 					UniSocPrinter.PrintTweet(tweet["user"]["name"], tweet["created_at"], tweet["retweet_count"], tweet["favorite_count"], tweet["text"])
 				end
 			else
 				puts "Aucun tweet trouvé"
+			end
+		end
+
+		# PrintTwitterMentionTimeline
+		# -> Affiche la timeline des mentions Twitter
+		# PARAMS : No
+		# RETURN : No
+		def self.PrintTwitterMentionTimeline
+			if (@@mentions != nil)
+				@@mentions.reverse.each do |tweet|
+					UniSocPrinter.PrintMention(tweet["user"]["name"], tweet["created_at"], tweet["retweet_count"], tweet["favorite_count"], tweet["text"])
+				end
+			else
+				puts "Aucune mention trouvé"
 			end
 		end
 
@@ -48,7 +70,7 @@ module UniSoc
 
 			if (user != nil)
 				PrintUserInfos(user["name"], user["screen_name"], user["location"], user["description"], user["url"], user["followers_count"], user["friends_count"],
-					user["listed_count"], user["favourites_count"], user["created_at"])
+					user["listed_count"], user["favourites_count"], user["created_at"], user["statuses_count"])
 			else
 				puts "Aucun utilisateur trouvé"
 			end
@@ -74,11 +96,11 @@ module UniSoc
 			end
 		end
 
-		# PrintRecentTimeline
+		# LoadAndPrintTimeline
 		# -> Récupère les données récentes et affiche les nouveaux tweets
 		# PARAMS : No
 		# RETURN : No
-		def self.PrintRecentTimeline
+		def self.LoadAndPrintTimeline
 			# Initialisation
 			if (@@tweets == nil)
 				# Si le chargement des tweets a marché
@@ -90,7 +112,7 @@ module UniSoc
 				end
 			else 
 				# On charge les nouveaux tweets
-				newTweets = LoadRecentTweet()
+				newTweets = LoadRecentTweets()
 				if (newTweets != nil)
 					newTweets.reverse.each do |parse|
 						PrintTweet(parse["user"]["name"], parse["created_at"], parse["retweet_count"], parse["favorite_count"], parse["text"])
@@ -100,7 +122,29 @@ module UniSoc
 					@@lastTweetID = @@tweets[0]["id"]
 				end
 			end
+		end
 
+		# LoadAndPrintMentions
+		# -> Récupère les mentions récentes et les affiche
+		# PARAMS : No
+		# RETURN : No
+		def self.LoadAndPrintMentionTimeline
+			# Initialisation
+			if (@@mentions== nil)
+				# On ne fait que charger les mentions, on ne les affiche pas directement
+				LoadMentions()
+			else 
+				# On charge les nouveaux tweets
+				newMentions = LoadRecentMentions()
+				if (newMentions != nil)
+					newMentions.reverse.each do |parse|
+						PrintMention(parse["user"]["name"], parse["created_at"], parse["retweet_count"], parse["favorite_count"], parse["text"])
+					end
+					# On stocke les nouveaux tweets
+					@@mentions = newMentions + @@mentions
+					@@lastMentionID = @@mentions[0]["id"]
+				end
+			end
 		end
 
 	## PRIVATE METHODS
@@ -120,6 +164,20 @@ module UniSoc
 			puts "#{text}\n\n"
 		end
 
+		# PrintMention
+		# -> Affiche un tweet
+		# PARAMS : 
+			# writer : l'auteur du tweet
+			# date : la date du tweet
+			# rt_count : le nombre de retweets
+			# f_cout : le nombre de favoris
+			# text : le contenu du tweet
+		# RETURN : No
+		def self.PrintMention (writer, date, rt_count, f_count, text)
+			puts "\t¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤ MENTION ¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤¤\n\t¤¤ -> write by #{writer} the #{date} - RT : #{rt_count} - <3 : #{f_count}"
+			puts "#{text}\n\n"
+		end
+
 		# PrintUserInfos
 		# -> Affiche les informations d'un utilisateur
 		# PARAMS : 
@@ -132,13 +190,14 @@ module UniSoc
 			# friends_count : nombre d'amis
 			# listed_count : ?
 			# favourites_count : nombre de favoris
+			# statuses_count : nombre de tweets de l'utilisateur
 			# created_at : date de création du compte
 		# RETURN : No
-		def self.PrintUserInfos(name, screen_name, location, description, url, followers_count, friends_count, listed_count, favourites_count, created_at)
+		def self.PrintUserInfos(name, screen_name, location, description, url, followers_count, friends_count, listed_count, favourites_count, created_at, statuses_count)
 			puts "\t()()()()()()()()()() USER ()()()()()()()()()()\n"
 			puts "\t#{name} - @#{screen_name} - Who? : #{description} - Where? : #{location}"
 			puts "\tOn the Internet : #{url} - First time on Twitter : #{created_at}"
-			puts "\tFollowers : #{followers_count} - Friends : #{friends_count} - Listed : #{listed_count} - <3 : #{favourites_count}"
+			puts "\tTweets : #{statuses_count} - Followers : #{followers_count} - Friends : #{friends_count} - Listed : #{listed_count} - <3 : #{favourites_count}"
 		end
 
 		# LoadTimeline
@@ -146,10 +205,24 @@ module UniSoc
 		# PARAMS : No
 		# RETURN : boolean : true si on a récupérer des tweets, false en cas d'erreur
 		def self.LoadTimeline
-			tmp = @@twitterConnection.getTimelineForUser(10)
+			tmp = @@twitterConnection.getTimeline(10)
 			if (tmp != nil)
 				@@tweets = JSON.parse(tmp.body)
 				@@lastTweetID = @@tweets[0]["id"]
+			end
+
+			return tmp != nil
+		end
+
+		# LoadMentions
+		# -> Récupère les 10 premières mentions de notre utilisateur
+		# PARAMS : No
+		# RETURN : boolean : true si on a récupérer des mentions, false en cas d'erreur
+		def self.LoadMentions
+			tmp = @@twitterConnection.getMentions(10)
+			if (tmp != nil)
+				@@mentions = JSON.parse(tmp.body)
+				@@lastMentionID = @@mentions[0]["id"]
 			end
 
 			return tmp != nil
@@ -159,8 +232,21 @@ module UniSoc
 		# -> Récupère les tweets les plus récents (par rapport à nos tweets actuels)
 		# PARAMS : No
 		# RETURN : boolean : true si on a récupérer des tweets, false en cas d'erreur
-		def self.LoadRecentTweet
+		def self.LoadRecentTweets
 			tmp = @@twitterConnection.getTweetsSinceID(@@lastTweetID)
+			if (tmp != nil)
+				return JSON.parse(tmp.body)
+			end
+
+			return nil
+		end
+
+		# LoadRecentMentions
+		# -> Récupère les mentions les plus récents (par rapport à nos mentions actuels)
+		# PARAMS : No
+		# RETURN : boolean : true si on a récupérer des tweets, false en cas d'erreur
+		def self.LoadRecentMentions
+			tmp = @@twitterConnection.getMentionsSinceID(@@lastMentionID)
 			if (tmp != nil)
 				return JSON.parse(tmp.body)
 			end

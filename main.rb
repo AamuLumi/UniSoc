@@ -1,9 +1,14 @@
 $: << "."
 
 require 'timeout'
-require 'lib/unisocprinter'
+require 'lib/uniSocPrinter'
 require 'lib/twitterDebug'
 
+# executeCommand
+# -> Execute la commande spécifiée
+# PARAMS :
+	# command : la commande à exécuter
+# RETURN : No
 def executeCommand(command)
 	commands = command.downcase.split(" ")
 	case commands[0] # Correspond à la première commande : st (showTwitter), h (help)
@@ -15,6 +20,8 @@ def executeCommand(command)
 				UniSoc::UniSocPrinter.PrintTwitterTimeline
 			when "user", "u"
 				UniSoc::UniSocPrinter.PrintTwitterUser commands[2]
+			when "mention", "m"
+				UniSoc::UniSocPrinter.PrintTwitterMentionTimeline
 		end
 
 		when "help", "h"
@@ -22,46 +29,31 @@ def executeCommand(command)
 
 		when "q"
 			exit(0)
-
 	end
 end
 
-printer = UniSoc::UniSocPrinter.new
+tmpKeyboard = ""
 
-=begin
-parsed = JSON.parse(tc.getTweetsFromUser('aamulumi', 10).body)
-
-parsed.reverse.each do |parse|
-	puts "\t[TWEET]-> write by #{parse["user"]["name"]} the #{parse["created_at"]} - RT : #{parse["retweet_count"]} - <3 : #{parse["favorite_count"]}"
-	puts "#{parse["text"]}"
-end
-
-
-when "showTwitter rateLimit" || "st rl"
-			TwitterAPI::TwitterDebug.ShowRateLimit
-		when "showTwitter timeline" || "st t"
-			UniSoc::UniSocPrinter.PrintTwitterTimeline
-		when "showTwitter user" || "st u"
-			UniSoc::UniSocPrinter.Print
-		when "help" || "h"
-			UniSoc::UniSocPrinter.PrintHelp
-
-=end
-tmp = ""
+# On initialise UniSocPrinter
+UniSoc::UniSocPrinter.Init("unknown")
 
 begin
 	begin
 		puts "[INFO] Rafraîchissement de la timeline"
 		
-		UniSoc::UniSocPrinter.PrintRecentTimeline()
+		# On affiche les données de Twitter
+		UniSoc::UniSocPrinter.PrintTwitterDatas
+
+		# Permet de rentrer des commandes et d'obtenir un rafraîchissement toutes les 60 secondes
 		status = Timeout::timeout(60) {
 			while true
 				print "> "
-				tmp = gets.chomp
-				executeCommand(tmp)
+				tmpKeyboard = gets.chomp
+				executeCommand(tmpKeyboard)
 			end
 		}
 
+	# Quand on dépasse les 60 secondes, on supprime le caractère d'entrée au clavier
 	rescue Timeout::Error
 		print "\r"
 	end
