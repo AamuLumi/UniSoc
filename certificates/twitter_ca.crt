@@ -1,0 +1,11 @@
+Certificate:
+    Data:
+        Version: 3
+        Serial Number:
+            24:b7:37:f0:4b:12:7c:9e:bc:f1:c8:23:6e:27:c3:a0
+        Signature Algorithm: sha1WithRSAEncryption
+        Issuer: C=US, O=VeriSign, Inc., OU=VeriSign Trust Network, OU=Terms of use at https://www.verisign.com/rpa (c)10, CN=VeriSign Class 3 Secure Server CA - G3
+        Validity
+            Not Before: 2013-Oct-10 00:00:00 GMT
+            Not After : 2014-Oct-10 23:59:59 GMT
+        Subject: C=US, ST=California, L=San Francisco, O=Twitter, Inc., OU=Twitter Security, CN=api.twitter.com
