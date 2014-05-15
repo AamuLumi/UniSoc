@@ -15,7 +15,7 @@ Les gems suivantes sont nécessaires :
 
 #### Twitter
 
-- Lecture de la timeline de l'utilisateur
+- Lecture de la timeline et des mentions de l'utilisateur
 - Rafrachîssement automatique de la timeline en fonction du nombre de requêtes maximal toléré par Twitter (15 en 15min)
 - Consultation d'informations sur un utilisateur
 - Consultation des données concernant les nombres de requêtes maximals
